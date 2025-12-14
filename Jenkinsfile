@@ -16,3 +16,16 @@ pipeline {
         }
     }
 }
+stage('SonarQube Analysis') {
+    steps {
+        withSonarQubeEnv('SonarQubeServer') {
+            sh '''
+            sonar-scanner \
+              -Dsonar.projectKey=python-ci-cd-demo \
+              -Dsonar.projectName=python-ci-cd-demo \
+              -Dsonar.sources=. \
+              -Dsonar.language=py
+            '''
+        }
+    }
+}
