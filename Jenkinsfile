@@ -11,7 +11,9 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
-                python3 -m pip install --upgrade pip
+                python3 --version
+                pip3 --version
+
                 pip3 install -r requirements.txt --break-system-packages
                 '''
             }
@@ -19,7 +21,9 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                sh 'pytest || true'
+                sh '''
+                pytest || true
+                '''
             }
         }
 
@@ -40,10 +44,10 @@ pipeline {
         stage('Docker Build & Push') {
             steps {
                 script {
-                    docker.withRegistry('', 'dockerhub-creds') {
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-creds') {
                         sh '''
-                        docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
-                        docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
+                        docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
+                        docker push $DOCKER_IMAGE:$DOCKER_TAG
                         '''
                     }
                 }
