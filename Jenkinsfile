@@ -1,38 +1,34 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_IMAGE = "aswineraja08/flask-app"
+        DOCKER_CREDS = "dockerhub-creds"
+        SONAR_SERVER = "SonarQubeServer"
+    }
+
     stages {
+
+        stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
 
         stage('Install Dependencies') {
             steps {
                 sh '''
-                sudo apt-get update -y
-                sudo apt-get install -y python3-pip unzip curl
-
-                pip3 install pytest --break-system-packages
-                '''
-            }
-        }
-
-        stage('Install Sonar Scanner') {
-            steps {
-                sh '''
-                if [ ! -d "/opt/sonar-scanner" ]; then
-                  sudo curl -o /tmp/sonar-scanner.zip \
-                  https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
-
-                  sudo unzip /tmp/sonar-scanner.zip -d /opt
-                  sudo mv /opt/sonar-scanner-* /opt/sonar-scanner
-                fi
-
-                sudo ln -sf /opt/sonar-scanner/bin/sonar-scanner /usr/bin/sonar-scanner
+                python3 --version
+                pytest --version
                 '''
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh 'pytest || true'
+                sh '''
+                pytest || true
+                '''
             }
         }
 
@@ -48,6 +44,28 @@ pipeline {
                     '''
                 }
             }
+        }
+
+        stage('Docker Build & Push') {
+            steps {
+                script {
+                    docker.withRegistry('', DOCKER_CREDS) {
+                        sh '''
+                        docker build -t $DOCKER_IMAGE .
+                        docker push $DOCKER_IMAGE
+                        '''
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "🎉 CI/CD Pipeline completed successfully!"
+        }
+        failure {
+            echo "❌ Pipeline failed. Check logs."
         }
     }
 }
