@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        sonarScanner 'SonarScanner'
+    }
+
     environment {
         DOCKER_IMAGE = "aswineraja08/flask-app"
         DOCKER_TAG   = "latest"
@@ -13,7 +17,6 @@ pipeline {
                 sh '''
                 python3 --version
                 pip3 --version
-
                 pip3 install -r requirements.txt --break-system-packages
                 '''
             }
@@ -21,9 +24,7 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                sh '''
-                pytest || true
-                '''
+                sh 'pytest || true'
             }
         }
 
@@ -31,7 +32,7 @@ pipeline {
             steps {
                 withSonarQubeEnv('SonarQubeServer') {
                     sh '''
-                    sonar-scanner \
+                    ${SONAR_SCANNER_HOME}/bin/sonar-scanner \
                       -Dsonar.projectKey=python-ci-cd-demo \
                       -Dsonar.projectName=python-ci-cd-demo \
                       -Dsonar.sources=. \
