@@ -2,15 +2,18 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "aswineraja08/flask-app"
-        IMAGE_TAG  = "latest"
+        DOCKER_IMAGE = "aswineraja08/flask-app"
+        DOCKER_TAG   = "latest"
     }
 
     stages {
 
         stage('Install Dependencies') {
             steps {
-                sh 'pip3 install -r requirements.txt --break-system-packages'
+                sh '''
+                python3 -m pip install --upgrade pip
+                pip3 install -r requirements.txt --break-system-packages
+                '''
             }
         }
 
@@ -22,17 +25,14 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                script {
-                    def scannerHome = tool 'SonarScanner'
-                    withSonarQubeEnv('SonarQubeServer') {
-                        sh """
-                        ${scannerHome}/bin/sonar-scanner \
-                          -Dsonar.projectKey=python-ci-cd-demo \
-                          -Dsonar.projectName=python-ci-cd-demo \
-                          -Dsonar.sources=. \
-                          -Dsonar.language=py
-                        """
-                    }
+                withSonarQubeEnv('SonarQubeServer') {
+                    sh '''
+                    sonar-scanner \
+                      -Dsonar.projectKey=python-ci-cd-demo \
+                      -Dsonar.projectName=python-ci-cd-demo \
+                      -Dsonar.sources=. \
+                      -Dsonar.language=py
+                    '''
                 }
             }
         }
@@ -41,10 +41,10 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('', 'dockerhub-creds') {
-                        sh """
-                        docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
-                        docker push ${IMAGE_NAME}:${IMAGE_TAG}
-                        """
+                        sh '''
+                        docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+                        docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
+                        '''
                     }
                 }
             }
